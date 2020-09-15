@@ -1,1 +1,0 @@
-# Plantilla para ejercicio de regresion Logistica
