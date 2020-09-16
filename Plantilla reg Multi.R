@@ -14,9 +14,9 @@ datos <- mtcars[i.train, ]
 datos.test <- mtcars[-i.train, ]
 
 #Se aplicar lo siguiente para las variables categoricas
-datos[["cyl"]] <- factor(datos[["cyl"]])
-datos.test[["cyl"]] <- factor(datos.test[["cyl"]])
-stopifnot(levels(datos[["cyl"]]) == levels(datos.test[["cyl"]]))
+datos[["CATEGORICA"]] <- factor(datos[["CATEGORICA"]])
+datos.test[["CATEGORICA"]] <- factor(datos.test[["CATEGORICA"]])
+stopifnot(levels(datos[["CATEGORICA"]]) == levels(datos.test[["CATEGORICA"]]))
 
 
 ggpairs(datos, lower = list(continuous = "smooth"),
@@ -31,8 +31,8 @@ round(cor(x = datos, method = "pearson"), 3)
 ########(significativo > .04)########
 
 ########ESTO NO VA EN EL CODIGO########
-nulo <- lm(Weight ~ 1, data = datos)
-completo <- lm(mpg ~ ., data = datos.train)
+nulo <- lm(VARY ~ 1, data = datos)
+completo <- lm(VARY ~ ., data = datos)
 
 modelo <- step(
   nulo,
@@ -43,8 +43,16 @@ modelo <- step(
 
 
 ###### AGREGAMOS UNA VARIABLE X AL MODELO CREADO AUTOMATICAMENTE
+
+# En la matriz de regresiones se puede observar que la VARY tiene una relacion
+# con la VARX1, VARX2, VARX3 y VARX4
+
+# Por tanto, se procedera a crear un modelo con los elementos anteriores.
+modelo <- lm(VARY ~ varx1+ varx2+ varx3+ varx4, data= datos) 
+
+
 # Agregar elemento
-modelo_b <- update(modelo, . ~ . + Chest.Girth)
+modelo_b <- update(modelo, . ~ . + analfabetismo)
 
 # Se compara el modelo (original vs con elemento eliminado) 
 
@@ -56,19 +64,20 @@ summary(modelo_b)
 # modelo (Es mas apropiado que el R).
 # Mayor es mejor
 
-anova(modelo, modelob)
+anova(modelo, modelo_b)
 # Ya que el Alpha << .05, se puede rechazar la hipotesis nula, por ende se puee
 # concluir de que existe una diferencia entre la variable explicada de un
 # modelo, por sobre otro (un modelo es considerablemente mejor).
 
-AIC(modelo, modelob)
+AIC(modelo, modelo_b)
 # Aplicando el criterio matematico del AIC se puede determinar si un modelo
 # mejora o empeora en relacion a la extraccion de un predictor. Este criterio
 # toma la AIC menor como mejor opcion.
 
 #Eliminar elemento
-modelo_b <- update(modelo, . ~ . - Chest.Girth)
+modelo_c <- update(modelo, . ~ . - varx4)
 
+modelo <- modelo_c
 
 # INTERPRETACION: Si el resto de variables se mantienen constantes, por cada 
 # unidad que aumentael predictor en cuestión,la variable (Y) varía en promedio
@@ -108,7 +117,11 @@ grid.arrange(plot1, plot2, plot3, plot4)
 
 
 # 2. Los residuos estan distribuidos de forma normal.
-plot(modelo)
+# Para verificar esta condicion se realizara un grafico Quintil-Quintil, junto
+# con un test de normalidad "Shapiro-Wilk" para los residuos.
+qqnorm(modelo$residuals)
+qqline(modelo$residuals)
+#plot(modelo)
 shapiro.test(modelo$residuals)
 
 # Concluir sobre el grafico (linea roja)
@@ -163,6 +176,9 @@ est.tolerancia <- 1/inf.varianza
 # 0.2 > TOL: Hay motivos para preocuparse e, debido a que existe un muy alta
 # colinialidad.
 
+#Para el caso que se debe eliminar
+modelo_d <- lm(VARY ~ varx1+varx2+varx3, data = datos[-c(malulo1, malulo2)])
+
 # 5. Debe existir una relacion de independencia entre los residuos (No autocorrelacion) 
 # Los residuos de cada observación debene ser independientes unos de otros, esto
 # se puede comprobar empleando el test de hipótesis de Durbin-Watson.
@@ -216,7 +232,7 @@ cat("MSE1:", round(MSE1, 3))
 cat("RMSE1:", round(RMSE1, 3))
 
 # Concluir en base a lo anterior, mientras menor el error, mejor
-
+summary(modelo)
 
 # Tanto el coeficiente libre, como los parciales significativos, debido a 
 # que los Pr son << .05.
