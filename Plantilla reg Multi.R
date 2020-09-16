@@ -1,4 +1,5 @@
 # Plantilla para ejercicio de regresion multiple
+library(vctrs)
 library(car)
 library(ggplot2)
 library(ggpubr)
@@ -7,29 +8,33 @@ library(leaps)
 library(lmtest)
 library(gridExtra)
 
-set.seed(100)
-#Separar los datos de prueba, y los datos de entrenamiento
-i.train <- sample(1:32, 20)
-datos <- mtcars[i.train, ]
-datos.test <- mtcars[-i.train, ]
+datos.generales <- DATOS
+total.datos <- nrow(datos.generales)
 
-#Se aplicar lo siguiente para las variables categoricas
+set.seed(100)
+# Se separan XXX datos para el entrenamiento, y YYY datos para la prueba
+i.train <- sample(1:total.datos, 20)
+datos <- datos.generales[i.train, ]
+datos.test <- datos.generales[-i.train, ]
+
+# Antes que nada, se aplica la funcion "factor" a las variables categoricas
 datos[["CATEGORICA"]] <- factor(datos[["CATEGORICA"]])
 datos.test[["CATEGORICA"]] <- factor(datos.test[["CATEGORICA"]])
 stopifnot(levels(datos[["CATEGORICA"]]) == levels(datos.test[["CATEGORICA"]]))
 
-#Para eliminar columnas malulas
+# Para eliminar columnas malulas
 datos$COLUMNAMALA <- NULL 
 
+# Se procedera a ver el comportamiento de las variables entradagas, esto por medio de:
 ggpairs(datos, lower = list(continuous = "smooth"),
         diag = list(continuous = "barDiag"), axisLabels = "none")
 
-# Matriz de regresiones 
-round(cor(x = datos, method = "pearson"), 3)
 # Se puede observar tanto la relacion lineal entre cada par de variables como
 # el coeficiente de relacion de las mismas. Ademas, se puede visualizar un 
 # histograma de la la variable. 
 
+# Matriz de regresiones 
+round(cor(x = datos, method = "pearson"), 3)
 ########(significativo > .04)########
 
 ########ESTO NO VA EN EL CODIGO########
@@ -43,43 +48,49 @@ modelo <- step(
 )
 ########ESTO NO VA EN EL CODIGO########
 
+# En lo anterior, se puede observar que la VARY tiene una relacion con la VARX1,
+# VARX2, VARX3 y VARX4. Por tanto, se procedera a crear un modelo con los elementos 
+# anteriores.
+modelo_a <- lm(VARY ~ varx1+ varx2+ varx3+ varx4, data= datos) 
 
-###### AGREGAMOS UNA VARIABLE X AL MODELO CREADO AUTOMATICAMENTE
+# Ahora se analiza el grado de significancia que tienen las variables dentro del modelo
+summary(modelo_a)
 
-# En la matriz de regresiones se puede observar que la VARY tiene una relacion
-# con la VARX1, VARX2, VARX3 y VARX4
+# Se observa que varx4 tiene un valor Pr >> .05, por lo que se analizara que 
+# sucede con el modelo si este se elimina.
+modelo_b <- update(modelo_a, . ~ . + varx4)
 
-# Por tanto, se procedera a crear un modelo con los elementos anteriores.
-modelo <- lm(VARY ~ varx1+ varx2+ varx3+ varx4, data= datos) 
-
-
-# Agregar elemento
-modelo_b <- update(modelo, . ~ . + analfabetismo)
-
-# Se compara el modelo (original vs con elemento eliminado) 
-
-summary(modelo)
+# Se contrastan los modelos utilizando summary
+summary(modelo_a)
 summary(modelo_b)
 
+# (1)
 # R^2 : Se utiliza este para pensalizar el ingreso de una nueva variable
 # predictora se usa el R^2, el cual indica la varianza explicada por el 
 # modelo (Es mas apropiado que el R).
 # Mayor es mejor
 
-anova(modelo, modelo_b)
+# (2)
+# Se observa que el coeficiente de determinacion (R^2) es similar entre los modelos. Por
+# lo que en ambos se explica de igual mandera la variable dependiente en relacion a 
+# sus predictores
+
+
+anova(modelo_a, modelo_b)
+
+# (1)
 # Ya que el Alpha << .05, se puede rechazar la hipotesis nula, por ende se puee
 # concluir de que existe una diferencia entre la variable explicada de un
 # modelo, por sobre otro (un modelo es considerablemente mejor).
 
-AIC(modelo, modelo_b)
+
+AIC(modelo_a, modelo_b)
 # Aplicando el criterio matematico del AIC se puede determinar si un modelo
 # mejora o empeora en relacion a la extraccion de un predictor. Este criterio
 # toma la AIC menor como mejor opcion.
 
-#Eliminar elemento
-modelo_c <- update(modelo, . ~ . - varx4)
 
-modelo <- modelo_c
+modelo <- modelo_b
 
 # INTERPRETACION: Si el resto de variables se mantienen constantes, por cada 
 # unidad que aumentael predictor en cuestión,la variable (Y) varía en promedio
@@ -217,7 +228,7 @@ errs <- datos.test[["mpg"]] - preds
 MSE <- mean(errs^2)
 RMSE <- sqrt(MSE)
 
-preds1 <- predict(modelo_b, datos.test)
+preds1 <- predict(modelo_a, datos.test)
 errs1 <- datos.test[["mpg"]] - preds1
 MSE1 <- mean(errs1^2)
 RMSE1 <- sqrt(MSE1)
