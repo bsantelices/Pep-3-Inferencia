@@ -18,6 +18,8 @@ datos[["CATEGORICA"]] <- factor(datos[["CATEGORICA"]])
 datos.test[["CATEGORICA"]] <- factor(datos.test[["CATEGORICA"]])
 stopifnot(levels(datos[["CATEGORICA"]]) == levels(datos.test[["CATEGORICA"]]))
 
+#Para eliminar columnas malulas
+datos$COLUMNAMALA <- NULL 
 
 ggpairs(datos, lower = list(continuous = "smooth"),
         diag = list(continuous = "barDiag"), axisLabels = "none")
@@ -163,7 +165,9 @@ bptest(modelo) # Nohay evidencias que indicen falta de homocedastidad (p-valor>0
 # y estadistico de tolerancia (1/VIF).
 
 inf.varianza <- vif(modelo)
+cat("VIF:", round(inf.varianza, 3))
 est.tolerancia <- 1/inf.varianza
+cat("TOL:", round(est.tolerancia, 3))
 
 # VIF = 1: Ausencia total de colinialidad
 
@@ -175,9 +179,6 @@ est.tolerancia <- 1/inf.varianza
 # colinialidad-
 # 0.2 > TOL: Hay motivos para preocuparse e, debido a que existe un muy alta
 # colinialidad.
-
-#Para el caso que se debe eliminar
-modelo_d <- lm(VARY ~ varx1+varx2+varx3, data = datos[-c(malulo1, malulo2)])
 
 # 5. Debe existir una relacion de independencia entre los residuos (No autocorrelacion) 
 # Los residuos de cada observación debene ser independientes unos de otros, esto
@@ -206,16 +207,17 @@ influencePlot(modelo)
 # y que ninguno de estos tiene un valor de Hook mayor a 1, se puede afirmar que 
 # no deberian causar problemas en el modelo.
 
+#Para el caso que se debe eliminar
+modelo_d <- lm(VARY ~ varx1+varx2+varx3, data = datos[-c(malulo1, malulo2)])
 
 # Ahora se procedera a analizar la calidad del modelo utilizando los
 # datos de prueba.
-
-preds <- predict(m2, datos.test)
+preds <- predict(modelo, datos.test)
 errs <- datos.test[["mpg"]] - preds
 MSE <- mean(errs^2)
 RMSE <- sqrt(MSE)
 
-preds1 <- predict(m1, datos.test)
+preds1 <- predict(modelo_b, datos.test)
 errs1 <- datos.test[["mpg"]] - preds1
 MSE1 <- mean(errs1^2)
 RMSE1 <- sqrt(MSE1)
