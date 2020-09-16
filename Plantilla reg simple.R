@@ -1,4 +1,4 @@
-# Plantilla para ejercicio de regresion simpl
+# Plantilla para ejercicio de regresion simple
 library(car)
 library(ggplot2)
 library(ggpubr)
@@ -196,11 +196,12 @@ ggplot(data = datos, aes(x = seq_along(residuos), y = residuos)) +
 # En este caso, la representación de los residuos no muestra ninguna tendencia
 
 
-# 5. Existe una ausencia, o leves casos, de valores atipicos.
-# Para comprobar este punto, se hara uso del test de medidas potencialmente influyentes,
+# 6. Existe una ausencia, o leves casos, de valores atipicos.
+# Para comprobar este punto, se hara uso del grafico de medidas potencialmente influyentes,
 # el cual, ayuda a determinar cuales valores se alejan del valor esperado por el modelo.
 
 influencePlot(model = modelo_lineal)
+summary(influence.measures(modelo_lineal))
 
 # Este nos ayuda a identificar las observaciones mas influyentes, mostrandolas
 # con un circulo de mayor tamaño
@@ -213,3 +214,12 @@ influencePlot(model = modelo_lineal)
 modelo_sin.atipicos <- lm(Weight ~ Height, datos[c(-130,-162)])
 
 
+summary(modelo_lineal)
+
+# Tanto el coeficiente libre, como el que explica la varianza de la independiente
+# son significativos, debido a que los Pr son << .05
+# El modelo es capaz de explicar el ???% de la variabilidad observada en la VARIABLE Y
+# (R2: 0.736). 
+# La varianza de la variable independiente es capaza de explicar el ???% de la
+# la variable dependiente. El test F muestra que es significativo << .05. 
+# Se satisfacen todas las condiciones para este tipo de regresión simple y de correlacion.
