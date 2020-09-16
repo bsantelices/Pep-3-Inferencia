@@ -4,6 +4,7 @@ library(ggplot2)
 library(ggpubr)
 library(lmtest)
 
+seed(100)
 #########Cambiar titulos y variables##########
 
 # Se utiliza el grafico de dispersión con el fin de analizar visualmente si existe 

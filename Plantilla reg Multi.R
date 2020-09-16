@@ -7,6 +7,7 @@ library(leaps)
 library(lmtest)
 library(gridExtra)
 
+seed(100)
 #Separar los datos de prueba, y los datos de entrenamiento
 i.train <- sample(1:32, 20)
 datos <- mtcars[i.train, ]
