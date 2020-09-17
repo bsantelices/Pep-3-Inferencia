@@ -9,24 +9,12 @@ library(tidyr)
 library(plyr)
 library(pROC)
 
-
-respaldo1 <- datos.wide
-respaldo2 <- datos.wide
-
-
-datos.generales <- DATOS
-total.datos <- nrow(datos.generales)
+datos <- DATOS
 
 set.seed(100)
-# Se separan XXX datos para el entrenamiento, y YYY datos para la prueba
-i.train <- sample(1:total.datos, 20)
-datos <- datos.generales[i.train, ]
-datos.test <- datos.generales[-i.train, ]
 
 # Antes que nada, se aplica la funcion "factor" a las variables categoricas
 datos[["CATEGORICA"]] <- factor(datos[["CATEGORICA"]])
-datos.test[["CATEGORICA"]] <- factor(datos.test[["CATEGORICA"]])
-stopifnot(levels(datos[["CATEGORICA"]]) == levels(datos.test[["CATEGORICA"]]))
 
 # Para eliminar columnas malulas
 datos$COLUMNAMALA <- NULL 
@@ -181,7 +169,8 @@ dwt(modelo, alternative = "two.sided")
 
 
 ##### ##### ##### ##### ##### 
-##### OJO APLICAR ESTA CONDICION SOLO SI SE TIENEN 2 CATEGORIAS (INCLUYENDO LA Y)
+##### OJO: APLICAR ESTO SOLO CON COMBINACION DE CATEGORICAS
+##### TAMBIEN SE PUEDE ANALIZAR SOLO EL CASO DE LA CATEGORIA DEPENDIENTE
 # 3. Informarcion incompleta
 # Esta condicion hace referencia a que deben existir una proporcion equitativa
 # entre los representantes de cada posible combinacion de predictores.
@@ -235,59 +224,82 @@ cat("TOL:", round(est.tolerancia, 3))
 # Se crean los datos de prueba.
 set.seed(49)
 i.para.entrenar <- createDataPartition(
-  y = datos.wide[["categoria"]],
+  y = datos[["VARY"]],
   times = 1,
   p = .5, 
   list = FALSE
 )
-i.para.entrenar2 <- c(i.para.entrenar)
-i.para.probar2 <- (1:nrow(datos.wide))[-i.para.entrenar]
-datos.train2 <- datos.wide[i.para.entrenar2, ]
-datos.test2  <- datos.wide[-i.para.probar2, ]
+i.para.entrenar <- c(i.para.entrenar)
+i.para.probar <- (1:nrow(datos))[-i.para.entrenar]
 
-set.seed(49*29)
-i.para.entrenar <- createDataPartition(
-  y = datos.wide[["categoria"]],
-  times = 1,
-  p = .5, 
-  list = FALSE
+datos.train <- datos[i.para.entrenar, ]
+datos.test  <- datos[-i.para.probar, ]
+
+# Se indica por factor, que la variable dependiete tiene dos niveles
+datos.test[["VARY"]] <- factor(datos.test$VARY, levels = c("CASO NEGATIVO", "CASO POSITIVO"))
+
+# OJO
+# Realizar esto solo si las variables dependientes estan con 0-1
+datos.test$VARY <-ifelse(datos.test$VARY==0,"CASO NEGATIVO","CASO POSITIVO")
+
+################################################
+########## SE ELIGE EL MEJOR
+# Por ejemplo, podemos indicar al algoritmo que no haga nada y use todos
+# los datos proporcionados.
+control4 <- trainControl(method = "none")
+
+# De hecho, podemos usar el área bajo la curva (AUC) ROC como criterio
+# para seleccionar el mejor modelo.
+control5 <- trainControl(
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE
 )
-i.para.entrenar1 <- c(i.para.entrenar)
-i.para.probar1 <- (1:nrow(datos.wide))[-i.para.entrenar]
-datos.train1 <- datos.wide[i.para.entrenar2, ]
-datos.test1<- datos.wide[-i.para.probar2, ]
 
+# También podemos conseguir un modelo usando validación cruzada.
+# Aqu�?, como son 30 datos, haremos 6 folds de 5 casos cada uno.
+control6 <- trainControl(
+  method = "cv",
+  number = 6,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE
+)
 
+# Y podemos llevar la validación cruzada al extremo, usando todos menos
+# un caso para entrenamiento. 
+control7 <- trainControl(
+  method = "LOOCV",
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE
+)
+################################################
 
-datos.test1[["categoria"]] <- factor(datos.test1$categoria, levels = c("Normal", "Sobrepeso"))
-datos.test1$categoria <-ifelse(datos.test1$categoria==0,"Normal","Sobrepeso")
 
 # OJO: Tienen que ser caracteres (no niveles 0-1)
 modelo_entrenado <- train(
-  categoria ~ Hip.Girth + Chest.Girth,
-  data = datos.test1,
-  method = "glm"
+  VARY ~ VARX1 + VARX2,
+  data = datos.train,
+  method = "glm",
+  trControl = control4
 )
 
 
 #######
-# En el caso de que se necesite predecir directamente desde el modelo
-prediccion1 <- predict(modelo_entrenado, datos.test1, type = "response")
+# En el caso de que se necesite predecir directamente desde el modelo (no el entrenado)
+prediccion <- predict(modelo, datos.test, type = "response")
 #######
 
-# Predecir con el objeto que entrega train
-predicciones1 <- predict(modelo_entrenado, newdata = datos.test2)
-datos.test1$categoria <- ifelse(datos.wide$datos.test1 == 1,"Sobrepeso","Normal")
+# Predecir con el modelo entrenado (objeto que entrega el train)
+predicciones <- predict(modelo_entrenado, newdata = datos.test)
+predicciones <- factor(predicciones, levels = c("CASO NEGATIVO", "CASO POSITIVO"))
 
-predicciones1 <- factor(predicciones1, levels = c("Normal", "Sobrepeso"))
-datos.test1$categoria <- factor(datos.wide$categoria, levels = c("Normal", "Sobrepeso"))
 
 # Tienen que ser caracteres
-matriz.confusion1 <- confusionMatrix(
-  data = predicciones1,
-  reference = datos.test1[["categoria"]],
-  positive = "Sobrepeso"
+matriz.confusion <- confusionMatrix(
+  data = predicciones,
+  reference = datos.test[["VARY"]],
+  positive = "CASO POSITIVO"
 )
+
 # Se concluye algo como esto.
 # Vemos que el modelo ahora alcanza un 81,3% de aciertos, con un
 # 66,7% de sensibilidad y muy buena especificidad (90,0%).
@@ -295,19 +307,31 @@ matriz.confusion1 <- confusionMatrix(
 # Miss clasification rate
 # Specifity
 
-
-predicciones1 <-ifelse(predicciones1=="Normal",1,0)
-datos.test1$categoria <-ifelse(datos.test1$categoria=="Normal",1,0)
+# Para graficar ROG, se necesita cambiar los valores de niveles de la variable 
+# dependiente. Esto a razon de: 0: Caso negativo y 1: Caso positivo
+predicciones <-ifelse(predicciones=="CASO NEGATIVO",0,1)
+datos.test$categoria <-ifelse(datos.test$categoria=="CASO NEGATIVO",0,1)
 
 # OJO: Tienen que ser numueros (0-1)
-modelo1.roc <- roc(datos.test1[["categoria"]], predicciones1,
+modelo.roc <- roc(datos.test[["VARY"]], predicciones,
                    percent = TRUE, print.auc = TRUE)
-plot(modelo1.roc)
-
+plot(modelo.roc)
 # Explicar modelo ROC
 
+# Como se puede ver en la curva ROG, los datos correspondientes al cruze de sensitividad
+# especificidad estan por sobre la diagonal de referencia, lo que indica que las predicciones
+# del modelo son bastantes cercanas a la realidad, por ende, es un buen modelo.
+
+# Graficar el modelo
+
+# Para graficar un RL
+#plot(modelo)
+summary(modelo)
 
 # Concluir el modelo
+
+
+
 
 
 
