@@ -31,8 +31,8 @@ datos.long[["VARY"]] <- factor(rep(respaldo.datos.dependiente, ncol(respaldo.dat
 
 #Para cambiar las categorias
 # OJO: NO USAR CUANDO LAS VARIABLES SON CARACTERES
-datos$VARY <- ifelse(datos.wide$VARY==0,"Normal","Sobrepeso")
-
+datos$VARY <- ifelse(datos$VARY==0,"CASO NEGATIVO","cASO POSITIVO")
+datos.long$VARY <-ifelse(datos.long$VARY==0,"CASO NEGATIVO","cASO POSITIVO")
 
 # Se realiza un grafico de cajas por cada variable numerica en relacion las categorias de 
 # la variable de estudio. Esto con el fin de analizar si existe una posible influencia de esta.
@@ -47,24 +47,25 @@ grafico1
 # Para el caso de las variables categoricas, se realizara una comparativa de las frecuencias de 
 # la categoria respecto a la variable de estudio
 
-datos.VARY.CategoricaA <- count(data.frame(VariableX=datos$VARX,categoria=datos$VARY))
-graficoA <- ggplot(data=datos.VARY.CategoricaA, aes(x=VARX, y=freq, fill=VARY)) +
+datos.VARY.CategoricaA <- count(data.frame(VariableX=datos$VARX,Categoria=datos$VARY))
+graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
-  ggtitle("Frecuency Plot for sex")
+  ggtitle("CAMBIAR TITULO DE GRAFICO")
 theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
 
-datos.VARY.CategoricaB <- count(data.frame(VariableX=datos$VARX,categoria=datos$VARY))
-graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=VARX, y=freq, fill=VARY)) +
+datos.VARY.CategoricaB <- count(data.frame(VariableX=datos$VARX,Categoria=datos$VARY))
+graficoB <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
-  ggtitle("Frecuency Plot for sex")
+  ggtitle("CAMBIAR TITULO DE GRAFICO")
 theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
-all.plot <- ggarrange(graficoA,graficoB)
+all.plot <- ggarrange(graficoA, graficoB)
+
 
 # Concluir en base a los graficos.
 
