@@ -48,6 +48,7 @@ modelo <- step(
 )
 ########ESTO NO VA EN EL CODIGO########
 
+# OJO: A ESTE SE LE AGREGA UNA VARIABLE CHALLA (Que tenga sentido con el contexto)
 # En lo anterior, se puede observar que la VARY tiene una relacion con la VARX1,
 # VARX2, VARX3 y VARX4. Por tanto, se procedera a crear un modelo con los elementos 
 # anteriores.
