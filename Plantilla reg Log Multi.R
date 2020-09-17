@@ -73,6 +73,9 @@ all.plot <- ggarrange(graficoA, graficoB)
 
 
 #############ESTO NO VA EN EL CODIGO
+
+# OJO: La variable dependiente tiene que estar si o si en 0 - 1
+datos$VARY <- ifelse(datos$VARY=="CASO NEGATIVO",0,1)
 total_cochinon <- glm(VARY ~ ., family = binomial(link = "logit"), data = datos)
 
 total <- glm(
@@ -84,7 +87,7 @@ total <- glm(
 nulo <- glm(
   VARY ~ 1,
   family = binomial(link = "logit"),
-  data = datos.wide
+  data = datos
 )
 
 modelo <- step(nulo, scope = list(lower = nulo, upper = total),
@@ -107,7 +110,7 @@ summary(modelo_a)
 
 # Se observa que varx4 tiene un valor Pr >> .05, por lo que se analizara que 
 # sucede con el modelo si este se elimina.
-modelo_b <- update(modelo_a, . ~ . + varx4)
+modelo_b <- update(modelo_a, . ~ . - varx4)
 
 # Se aplicaran dos criterios para comparar los modelos, el primero Likelihood
 # ratio se encargara de calcular la significancia de la diferencia de residuos
@@ -115,28 +118,24 @@ modelo_b <- update(modelo_a, . ~ . + varx4)
 # mejora o empeora su eficacia en predecir la variable de respuesta.
 
 print(anova(modelo_a, modelo_b, test = "LRT"))
-#Mientras mas baja la desviacion, mejor
+
+# Ya que el Alpha << .05, se puede rechazar la hipotesis nula, por ende se puee
+# concluir de que existe una diferencia entre la variable explicada de un
+# modelo, por sobre otro (un modelo es considerablemente mejor).
+
 
 # Aplicando el criterio matematico del AIC  Este criterio
 # toma la AIC menor como mejor opcion.
-AIC(modelo, modelo_b, modelo_c)
+AIC(modelo_a, modelo_b)
+
+# Por principio de parsimonia, se prefiere sacar la variable, ya que esta no se le afecta
+# significativamente su calidad.
 
 #Concluir en el momento
 
 ##### Ahora se tiene listo el modelo
 
 modelo <- modelo_b
-
-
-
-# El modelo esta definido para este punto
-
-# Se realizara un featurePlot Para analizar el traslape entre las variables
-# predictoras
-vps <- c("Hip.Girth", "Chest.Girth", "Calf.Maximum.Girth", "Waist.Girth")
-pl1 <- featurePlot(datos.wide[, vps], datos.wide[["categoria"]], plot = "pairs")
-
-# Concluir rapidamente
 
 
 
@@ -278,6 +277,7 @@ control7 <- trainControl(
 
 
 # OJO: Tienen que ser caracteres (no niveles 0-1)
+# OJO: Todos los categoricos tienen que tener su respestvo factor
 modelo_entrenado <- train(
   VARY ~ VARX1 + VARX2,
   data = datos.train,
@@ -290,6 +290,17 @@ modelo_entrenado <- train(
 # En el caso de que se necesite predecir directamente desde el modelo (no el entrenado)
 prediccion <- predict(modelo, datos.test, type = "response")
 #######
+
+# # # # # # # # # # # # # 
+# SIEMPRE QUE SE CAMBIEN LOS DATOS CATEGORICOS, ES NECESARIO TIRAR UN FACTOR
+# Para cambiar los datos
+datos$VARY <- ifelse(datos$VARY==0,"CASO NEGATIVO","cASO POSITIVO")
+predicciones <- factor(predicciones, levels = c("CASO NEGATIVO", "CASO POSITIVO"))
+# Para aplciar factor
+
+# # # # # # # # # # # # # 
+
+
 
 # Predecir con el modelo entrenado (objeto que entrega el train)
 predicciones <- predict(modelo_entrenado, newdata = datos.test)
@@ -304,19 +315,34 @@ matriz.confusion <- confusionMatrix(
 )
 
 # Se concluye algo como esto.
-# Vemos que el modelo ahora alcanza un 81,3% de aciertos, con un
-# 66,7% de sensibilidad y muy buena especificidad (90,0%).
-# Accuracy
-# Miss clasification rate
-# Specifity
+#   Specificity : 0.8902   
+#   Sensitivity : 0.7078   
+#   Accuracy : 0.82 
+#   No Information Rate : 0.615
+
+# Sobre el accuracy, es el porcentaje de casos que fueron clasificados de forma correcta
+# sin importar si son negativos o positivos.
+
+# Sobre el miss clasification rate (No information rate) es el porcentaje de casos que
+# NO fueron clasificados de forma correcta sin importar si son negativos o positivos.
+
+# Sensibilidad (Sensitivity), es el porcentaje que es realmente positivo, respecto al
+# total de positivos (claasificados y reales positivos)
+
+# Especificidad (Specificity), es el porcentaje que es realmente negativo, respecto al
+# total de negativos (clasificados y reales negativos)
+
 
 # Para graficar ROG, se necesita cambiar los valores de niveles de la variable 
 # dependiente. Esto a razon de: 0: Caso negativo y 1: Caso positivo
 predicciones <-ifelse(predicciones=="CASO NEGATIVO",0,1)
-datos.test$categoria <-ifelse(datos.test$categoria=="CASO NEGATIVO",0,1)
+datos.test$VARY <-ifelse(datos.test$VARY=="CASO NEGATIVO",0,1)
 
-# OJO: Tienen que ser numueros (0-1)
-modelo.roc <- roc(datos.test[["VARY"]], predicciones,
+predicciones_prob <- predict(modelo_entrenado, newdata = datos.test, type = "prob")
+
+
+# OJO: Solo tiene que ser PROB los casos de las predicciones
+modelo.roc <- roc(datos.test[["VARY"]], predicciones_prob[["CASO POSITIVO"]],
                    percent = TRUE, print.auc = TRUE)
 plot(modelo.roc)
 # Explicar modelo ROC
