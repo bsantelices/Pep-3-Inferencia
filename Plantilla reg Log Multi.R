@@ -49,7 +49,7 @@ grafico1
 
 
 datos.CategoricaA <- count(data.frame(var_indep=datos$VARX,Categoria=datos$VARY))
-graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=var_indep, y=freq, fill=Categoria)) +
+graficoA <- ggplot(data=datos.CategoricaA, aes(x=var_indep, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
@@ -58,7 +58,7 @@ theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
 
 datos.CategoricaB <- count(data.frame(var_indep=datos$VARX,Categoria=datos$VARY))
-graficoB <- ggplot(data=datos.VARY.CategoricaB, aes(x=var_indep, y=freq, fill=Categoria)) +
+graficoB <- ggplot(data=datos.CategoricaB, aes(x=var_indep, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
