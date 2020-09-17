@@ -47,8 +47,9 @@ grafico1
 # Para el caso de las variables categoricas, se realizara una comparativa de las frecuencias de 
 # la categoria respecto a la variable de estudio
 
-datos.VARY.CategoricaA <- count(data.frame(VariableX=datos$VARX,Categoria=datos$VARY))
-graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Categoria)) +
+
+datos.CategoricaA <- count(data.frame(var_indep=datos$VARX,Categoria=datos$VARY))
+graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=var_indep, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
@@ -56,8 +57,8 @@ graficoA <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Ca
 theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
 
-datos.VARY.CategoricaB <- count(data.frame(VariableX=datos$VARX,Categoria=datos$VARY))
-graficoB <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Categoria)) +
+datos.CategoricaB <- count(data.frame(var_indep=datos$VARX,Categoria=datos$VARY))
+graficoB <- ggplot(data=datos.VARY.CategoricaB, aes(x=var_indep, y=freq, fill=Categoria)) +
   geom_bar(stat="identity", position=position_dodge()) +
   geom_text(aes(label=freq), vjust=1, color="black",
             position = position_dodge(0.9), size=3) +
@@ -65,6 +66,7 @@ graficoB <- ggplot(data=datos.VARY.CategoricaB, aes(x=VariableX, y=freq, fill=Ca
 theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
 all.plot <- ggarrange(graficoA, graficoB)
+
 
 
 # Concluir en base a los graficos.
