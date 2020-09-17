@@ -142,8 +142,8 @@ modelo <- modelo_b
 # Ahora para aceptar el modelo, es necesario que este cumpla con las siguientes
 # condiciones:
 # 1. Linealidad
-
-# Esto se puede verificar realizado un analisis entre los predictores
+# Debe existir una relación lineal entre el logaritmo natural de odds y la variable
+# continua, esto se puede verificar realizado un analisis entre los predictores
 # y su transformacion logaritmica, en busqueda de una relacion significativa
 #OJO: Tienen que llevar si o si log y Int
 datos.pivote <- datos
